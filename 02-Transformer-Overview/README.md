@@ -115,210 +115,215 @@ import torch
 import torch.nn as nn
 import numpy as np
 from typing import Dict, List, Optional, Tuple
-from src.security import SecurityValidator
-from src.visualization import ArchitectureVisualizer
 
 class InterpretableAttentionHead(nn.Module):
     """
     Single attention head designed for interpretability analysis.
-    
+
     Separates QK and OV circuits explicitly for independent analysis.
     """
-    
+
     def __init__(self, d_model: int, d_head: int):
         super().__init__()
         self.d_model = d_model
         self.d_head = d_head
-        
+
         # Separate matrices for interpretability
         self.W_Q = nn.Parameter(torch.randn(d_head, d_model) / np.sqrt(d_model))
         self.W_K = nn.Parameter(torch.randn(d_head, d_model) / np.sqrt(d_model))
         self.W_V = nn.Parameter(torch.randn(d_head, d_model) / np.sqrt(d_model))
         self.W_O = nn.Parameter(torch.randn(d_model, d_head) / np.sqrt(d_head))
-        
+
         # For analysis: precomputed combined matrices
         self.register_buffer('W_QK', None)  # Will be computed
         self.register_buffer('W_OV', None)  # Will be computed
-    
+
     def compute_circuit_matrices(self):
         """Compute QK and OV circuit matrices for analysis."""
         # QK circuit: governs attention patterns
         self.W_QK = torch.mm(self.W_Q.T, self.W_K)  # [d_model, d_model]
-        
+
         # OV circuit: governs information movement
         self.W_OV = torch.mm(self.W_O, self.W_V)    # [d_model, d_model]
-    
+
     def forward(self, residual_stream: torch.Tensor) -> Tuple[torch.Tensor, Dict]:
         """
         Forward pass with interpretability tracking.
-        
+
         Args:
             residual_stream: [seq_len, d_model]
-            
+
         Returns:
-            head_output: [seq_len, d_model] 
+            head_output: [seq_len, d_model]
             analysis_data: Dict with attention patterns, value effects
         """
         seq_len, d_model = residual_stream.shape
-        
+
         # Compute Q, K, V
         Q = torch.mm(residual_stream, self.W_Q.T)  # [seq_len, d_head]
         K = torch.mm(residual_stream, self.W_K.T)  # [seq_len, d_head]
         V = torch.mm(residual_stream, self.W_V.T)  # [seq_len, d_head]
-        
+
         # Attention scores and patterns
         scores = torch.mm(Q, K.T) / np.sqrt(self.d_head)  # [seq_len, seq_len]
-        
+
         # Causal masking for autoregressive generation
         causal_mask = torch.triu(torch.ones(seq_len, seq_len), diagonal=1) * -1e9
         masked_scores = scores + causal_mask
-        
+
         attention_pattern = torch.softmax(masked_scores, dim=-1)  # [seq_len, seq_len]
-        
+
         # Value aggregation
         attended_values = torch.mm(attention_pattern, V)  # [seq_len, d_head]
-        
+
         # Output projection
         head_output = torch.mm(attended_values, self.W_O.T)  # [seq_len, d_model]
-        
+
         # Analysis data for interpretability
         analysis_data = {
             'attention_pattern': attention_pattern.detach(),
             'q_vectors': Q.detach(),
-            'k_vectors': K.detach(), 
+            'k_vectors': K.detach(),
             'v_vectors': V.detach(),
             'attended_values': attended_values.detach(),
             'head_output': head_output.detach()
         }
-        
+
         return head_output, analysis_data
 
 class InterpretableTransformer(nn.Module):
     """
     Simplified transformer optimized for circuit analysis.
-    
+
     Features:
     - Attention-only (no MLPs)
-    - No layer normalization  
+    - No layer normalization
     - Explicit residual stream tracking
     - Full interpretability instrumentation
     """
-    
+
     def __init__(self, vocab_size: int, d_model: int, n_layers: int, n_heads: int):
         super().__init__()
-        
+
         self.vocab_size = vocab_size
         self.d_model = d_model
         self.n_layers = n_layers
         self.n_heads = n_heads
         self.d_head = d_model // n_heads
-        
+
         # Input/output layers
         self.token_embedding = nn.Embedding(vocab_size, d_model)
         self.unembedding = nn.Linear(d_model, vocab_size, bias=False)
-        
+
         # Attention layers
         self.attention_heads = nn.ModuleList([
             nn.ModuleList([
-                InterpretableAttentionHead(d_model, self.d_head) 
+                InterpretableAttentionHead(d_model, self.d_head)
                 for _ in range(n_heads)
             ]) for _ in range(n_layers)
         ])
-        
+
         # Positional embeddings (fixed, not learned)
         self.register_buffer('pos_embeddings', self._create_positional_embeddings())
-        
+
         # Security validator
         self.security_validator = SecurityValidator()
-    
+
     def _create_positional_embeddings(self, max_len: int = 2048) -> torch.Tensor:
         """Create fixed sinusoidal positional embeddings."""
         pos_enc = torch.zeros(max_len, self.d_model)
         position = torch.arange(0, max_len).unsqueeze(1).float()
-        
-        div_term = torch.exp(torch.arange(0, self.d_model, 2).float() * 
+
+        div_term = torch.exp(torch.arange(0, self.d_model, 2).float() *
                            -(np.log(10000.0) / self.d_model))
-        
+
         pos_enc[:, 0::2] = torch.sin(position * div_term)
         pos_enc[:, 1::2] = torch.cos(position * div_term)
-        
+
         return pos_enc
-    
-    def forward(self, tokens: torch.Tensor, 
+
+    def forward(self, tokens: torch.Tensor,
                 return_analysis: bool = False) -> Dict[str, torch.Tensor]:
         """
         Forward pass with optional detailed analysis.
-        
+
         Args:
-            tokens: [seq_len] token indices
+            tokens: [batch_size, seq_len] token indices
             return_analysis: Whether to return interpretability data
-            
+
         Returns:
             Dict containing logits and optional analysis data
         """
-        seq_len = tokens.shape[0]
-        
+        # Ensure tokens is 2D with a batch dimension
+        if tokens.ndim == 1:
+            tokens = tokens.unsqueeze(0) # Add batch dimension
+
+        batch_size, seq_len = tokens.shape
+
         # Input validation
         tokens = self.security_validator.validate_token_sequence(tokens)
-        
+
         # Initial residual stream: embeddings + positions
-        token_embeds = self.token_embedding(tokens)  # [seq_len, d_model]
-        pos_embeds = self.pos_embeddings[:seq_len]   # [seq_len, d_model]
-        
-        residual_stream = token_embeds + pos_embeds  # [seq_len, d_model]
-        
+        token_embeds = self.token_embedding(tokens)  # [batch_size, seq_len, d_model]
+        pos_embeds = self.pos_embeddings[:seq_len].unsqueeze(0) # [1, seq_len, d_model]
+        # Broadcast pos_embeds to match batch_size
+        pos_embeds = pos_embeds.expand(batch_size, -1, -1)
+
+        residual_stream = token_embeds + pos_embeds  # [batch_size, seq_len, d_model]
+
         # Track analysis data if requested
         analysis_data = {
             'residual_streams': [residual_stream.detach()],
             'attention_patterns': [],
             'head_contributions': []
         } if return_analysis else None
-        
+
         # Process through attention layers
         for layer_idx, layer_heads in enumerate(self.attention_heads):
             layer_contributions = []
             layer_attention_patterns = []
-            
+
             # Process each head independently
             for head_idx, head in enumerate(layer_heads):
                 # Update head circuit matrices
                 head.compute_circuit_matrices()
-                
+
                 # Get head output and analysis
-                head_output, head_analysis = head(residual_stream)
-                
+                # Pass [batch_size, seq_len, d_model] to head forward
+                head_output, head_analysis = head(residual_stream.squeeze(0)) # Temporarily remove batch for head
+
                 # Add to residual stream (additive structure)
-                residual_stream = residual_stream + head_output
-                
+                residual_stream = residual_stream + head_output.unsqueeze(0) # Add batch back
+
                 # Store analysis data
                 if return_analysis:
                     layer_contributions.append(head_output.detach())
                     layer_attention_patterns.append(head_analysis['attention_pattern'])
-            
+
             # Record layer-level analysis
             if return_analysis:
                 analysis_data['residual_streams'].append(residual_stream.detach())
                 analysis_data['head_contributions'].append(layer_contributions)
                 analysis_data['attention_patterns'].append(layer_attention_patterns)
-        
+
         # Final logits
-        logits = self.unembedding(residual_stream)  # [seq_len, vocab_size]
-        
+        logits = self.unembedding(residual_stream)  # [batch_size, seq_len, vocab_size]
+
         # Package results
         results = {'logits': logits}
         if return_analysis:
             results['analysis'] = analysis_data
-            
+
         return results
 
 # Demonstration and testing
 def demonstrate_interpretable_architecture():
     """
     Demonstrate the interpretable transformer architecture.
-    
+
     Shows how to instantiate, run, and analyze the simplified model.
     """
-    
+
     # Model configuration
     config = {
         'vocab_size': 1000,
@@ -326,45 +331,47 @@ def demonstrate_interpretable_architecture():
         'n_layers': 2,
         'n_heads': 4
     }
-    
+
     # Create model
     model = InterpretableTransformer(**config)
     visualizer = ArchitectureVisualizer()
-    
-    # Example input sequence
-    test_tokens = torch.tensor([1, 15, 27, 89, 156])  # Random valid tokens
-    
+
+    # Example input sequence - Add a batch dimension
+    test_tokens = torch.tensor([[1, 15, 27, 89, 156]])  # [batch=1, seq=5]
+
     print("=== Interpretable Transformer Architecture Demo ===")
     print(f"Model configuration: {config}")
-    print(f"Input sequence: {test_tokens.tolist()}")
-    
+    print(f"Input sequence shape: {test_tokens.shape}")
+
     # Run with analysis
     with torch.no_grad():
         results = model(test_tokens, return_analysis=True)
-    
+
     # Extract results
     logits = results['logits']
     analysis = results['analysis']
-    
+
     print(f"Output shape: {logits.shape}")
     print(f"Residual stream evolution: {[rs.shape for rs in analysis['residual_streams']]}")
-    
-    # Visualize architecture flow
+
+    # Visualize architecture flow (placeholders)
+    print("\n--- Visualization Placeholders ---")
     visualizer.plot_residual_stream_evolution(
         analysis['residual_streams'],
         title="Residual Stream Evolution Through Layers",
         alt_text="Line plot showing how residual stream values change through transformer layers"
     )
-    
-    # Analyze attention patterns
+
+    # Analyze attention patterns (placeholders)
     for layer_idx, layer_patterns in enumerate(analysis['attention_patterns']):
+        print(f"Layer {layer_idx} Attention Patterns:")
         for head_idx, pattern in enumerate(layer_patterns):
             visualizer.plot_attention_pattern(
                 pattern,
                 title=f"Layer {layer_idx}, Head {head_idx} Attention Pattern",
                 alt_text=f"Heatmap showing attention weights for layer {layer_idx} head {head_idx}"
             )
-    
+
     return model, results
 
 # Execute demonstration
