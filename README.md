@@ -105,14 +105,14 @@ TransformerCircuitsCourse/
 
 | Module | Focus Area | Duration | Key Outcomes |
 |--------|------------|----------|--------------|
-| **00** | [Summary of Results](./00-Summary-of-Results/) | 2-3 hours | Research overview, motivation |
-| **01** | [Transformer Overview](./01-Transformer-Overview/) | 4-5 hours | Architecture, simplifications |
-| **02** | [Residual Stream](./02-Residual-Stream-and-Virtual-Weights/) | 5-6 hours | Communication channels, virtual weights |
-| **03** | [Attention Heads](./03-Attention-Heads-Independent-and-Additive/) | 4-5 hours | Information movement, QK/OV circuits |
-| **04** | [Zero-Layer Models](./04-Zero-Layer-Transformers/) | 3-4 hours | Bigram statistics, direct paths |
-| **05** | [One-Layer Models](./05-One-Layer-Attention-Only-Transformers/) | 8-10 hours | Skip-trigrams, copying mechanisms |
-| **06** | [Two-Layer Models](./06-Two-Layer-Attention-Only-Transformers/) | 10-12 hours | Composition, induction heads |
-| **07** | [Advanced Topics](./07-Additional-Intuition-and-Observations/) | 4-5 hours | MLP layers, future directions |
+| **00** | [Summary of Results](./01-Summary-of-Results/) | 2-3 hours | Research overview, motivation |
+| **01** | [Transformer Overview](./02-Transformer-Overview/) | 4-5 hours | Architecture, simplifications |
+| **02** | [Residual Stream](./03-Residual-Stream-and-Virtual-Weights/) | 5-6 hours | Communication channels, virtual weights |
+| **03** | [Attention Heads](./04-Attention-Heads-Independent-and-Additive/) | 4-5 hours | Information movement, QK/OV circuits |
+| **04** | [Zero-Layer Models](./05-Zero-Layer-Transformers/) | 3-4 hours | Bigram statistics, direct paths |
+| **05** | [One-Layer Models](./06-One-Layer-Attention-Only-Transformers/) | 8-10 hours | Skip-trigrams, copying mechanisms |
+| **06** | [Two-Layer Models](./07-Two-Layer-Attention-Only-Transformers/) | 10-12 hours | Composition, induction heads |
+| **07** | [Advanced Topics](./08-Additional-Intuition-and-Observations/) | 4-5 hours | MLP layers, future directions |
 
 ## Environment Setup
 
