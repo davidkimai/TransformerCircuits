@@ -47,6 +47,58 @@ flowchart TD
     style H fill:#f3e5f5
 ```
 
+```
+TransformerCircuitsCourse/
+├── CHECKLIST.md
+├── README.md
+├── 01-Summary-of-Results/
+│   └── README.md
+├── 02-Transformer-Overview/
+│   ├── README.md
+│   ├── Model-Simplifications.md
+│   └── High-Level-Architecture.md
+├── 03-Residual-Stream-and-Virtual-Weights/
+│   ├── README.md
+│   ├── Virtual-Weights.md
+│   └── Subspaces-and-Residual-Bandwidth.md
+├── 04-Attention-Heads-Independent-and-Additive/
+│   ├── README.md
+│   └── Attention-as-Information-Movement.md
+├── 05-Zero-Layer-Transformers/
+│   └── README.md
+├── 06-One-Layer-Attention-Only-Transformers/
+│   ├── README.md
+│   ├── Path-Expansion-Trick.md
+│   ├── QK-and-OV-Circuits.md
+│   ├── Freezing-Attention-Patterns.md
+│   ├── Skip-Trigram-Interpretation.md
+│   ├── Copying-and-Primitive-ICL.md
+│   ├── Other-Interesting-Skip-Trigrams.md
+│   ├── Primarily-Positional-Heads.md
+│   ├── Skip-Trigram-Bugs.md
+│   ├── Summarizing-OV-QK-Matrices.md
+│   └── Detecting-Copying-Behavior.md
+├── 07-Two-Layer-Attention-Only-Transformers/
+│   ├── README.md
+│   ├── Three-Kinds-of-Composition.md
+│   ├── Path-Expansion-of-Logits.md
+│   ├── Path-Expansion-of-Attention-Scores.md
+│   ├── Analyzing-a-Two-Layer-Model.md
+│   ├── Induction-Heads.md
+│   ├── How-Induction-Heads-Work.md
+│   ├── Checking-the-Mechanistic-Theory.md
+│   └── Term-Importance-Analysis.md
+├── 08-Additional-Intuition-and-Observations/
+│   └── MLP-Layers.md
+├── 09-Technical-Details/
+│   └── README.md
+├── 10-Notation-Appendix/
+│   └── README.md
+├── 11-Additional-Resources/
+│   └── README.md
+└── 12-Acknowledgments-and-Contributions/
+    └── README.md
+```
 **Accessibility Description**: Learning progression flows from foundational concepts through increasingly complex transformer architectures, culminating in advanced interpretability techniques.
 
 ### Module Structure
