@@ -14,7 +14,7 @@ certification: "production_readiness_verified"
 
 ## Course Overview
 
-This course provides a pedagogical, accessible implementation of Anthropic's groundbreaking research "A Mathematical Framework for Transformer Circuits" ([Elhage et al., 2021](https://transformer-circuits.pub/2021/framework/index.html)). Designed specifically for beginning AI/ML engineers, it bridges the gap between theoretical research and production implementation.
+This course provides a pedagogical, accessible implementation of Anthropic's groundbreaking research "A Mathematical Framework for Transformer Circuits" ([Elhage et al., 2021](https://transformer-circuits.pub/2021/framework/index.html)). Designed specifically for beginning/intermediate AI/ML engineers, it bridges the gap between theoretical research and production implementation.
 
 ### What You'll Learn
 
