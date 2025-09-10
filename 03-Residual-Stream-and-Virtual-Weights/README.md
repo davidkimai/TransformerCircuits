@@ -90,8 +90,8 @@ This creates implicit connections between any two layers, enabling sophisticated
 
 | Lesson | Topic | Duration | Key Implementation |
 |--------|-------|----------|-------------------|
-| **3.1** | [Virtual Weights](./Virtual-Weights.md) | 90 min | Virtual weight computation library |
-| **3.2** | [Subspaces and Bandwidth](./Subspaces-and-Residual-Bandwidth.md) | 90 min | Residual stream analysis toolkit |
+| **3.1** | [Virtual Weights](./03.1-Virtual-Weights.md) | 90 min | Virtual weight computation library |
+| **3.2** | [Subspaces and Bandwidth](./03.2-Subspaces-and-Residual-Bandwidth.md) | 90 min | Residual stream analysis toolkit |
 | **3.3** | **Integration & Assessment** | 60 min | Complete information flow tracer |
 
 ## Mathematical Foundation
